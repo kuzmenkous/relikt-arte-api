@@ -1,0 +1,74 @@
+[project]
+name = "relikt-arte-api"
+version = "0.1.0"
+description = "Relikt Arte API"
+authors = [
+    {name = "Oleg Kuzmenko",email = "okuzmenko31us@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi (>=0.116.1,<0.117.0)",
+    "pydantic[email-validator,pydantic-extra-types,pydantic-settings] (>=2.11.9,<3.0.0)",
+    "sqlalchemy[greenlet] (>=2.0.43,<3.0.0)",
+    "alembic[alembic-postgresql-enum] (>=1.16.5,<2.0.0)",
+    "asyncpg (>=0.30.0,<0.31.0)",
+    "redis (>=6.4.0,<7.0.0)",
+    "python-jose[passlib] (>=3.5.0,<4.0.0)",
+    "gunicorn (>=23.0.0,<24.0.0)",
+    "uvicorn (>=0.35.0,<0.36.0)",
+    "aiosmtplib (>=4.0.2,<5.0.0)",
+    "aiofiles (>=24.1.0,<25.0.0)",
+    "pre-commit (>=4.3.0,<5.0.0)",
+    "mypy (>=1.18.1,<2.0.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+# ============================================================================
+# Linters section
+
+[tool.ruff]
+target-version = "py313"
+line-length = 79
+fix = true
+show-fixes = true
+output-format = "concise"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "ANN",  # Checked by mypy
+    "FBT",
+    "EM",
+    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D203",
+    "TD002", "TD003",
+    "FIX002",
+    "TRY003",
+    "RUF001", "RUF002", "RUF003",
+    "PLC0414",
+    "COM812",
+    "UP040",
+    "PLR0913",
+    "TID252",
+    "B904",
+    "N818",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.black]
+line-length = 79
+skip-magic-trailing-comma = true
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.importlinter]
+root_package = "src"
+include_external_packages = true

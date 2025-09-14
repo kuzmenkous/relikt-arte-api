@@ -39,7 +39,7 @@ class DatabaseSettings(BaseSettings, env_prefix="postgres_"):
     port: int
 
     @property
-    def dsn(self) -> str:
+    def url(self) -> str:
         return str(
             PostgresDsn.build(
                 scheme="postgresql+asyncpg",
@@ -79,7 +79,7 @@ class Settings(BaseSettings):
     # Cors
     cors: CorsSettings = Field(default_factory=CorsSettings)
     # Database
-    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
+    db: DatabaseSettings = Field(default_factory=DatabaseSettings)
     # JWT
     jwt: JWTSettings = Field(default_factory=JWTSettings)
     # Static

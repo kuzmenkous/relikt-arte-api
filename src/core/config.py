@@ -22,11 +22,6 @@ class AppSettings(BaseSettings, env_prefix="app_"):
         return f"{self.protocol}://{self.domain}"
 
 
-class SuperAdminSettings(BaseSettings, env_prefix="superadmin_"):
-    email: str
-    password: str
-
-
 class CorsSettings(BaseSettings, env_prefix="cors_"):
     origins: list[str]
 
@@ -74,8 +69,6 @@ class Settings(BaseSettings):
 
     # App
     app: AppSettings = Field(default_factory=AppSettings)
-    # Superadmin
-    superadmin: SuperAdminSettings = Field(default_factory=SuperAdminSettings)
     # Cors
     cors: CorsSettings = Field(default_factory=CorsSettings)
     # Database
@@ -94,4 +87,4 @@ def get_settings() -> Settings:
     return Settings()
 
 
-settings = Settings()
+settings: Settings = get_settings()

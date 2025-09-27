@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+# ruff: noqa: INP001
 """${message}
 
 Revision ID: ${up_revision}

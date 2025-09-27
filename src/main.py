@@ -1,5 +1,6 @@
-from fastapi import APIRouter, FastAPI, status
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .core.config import settings
@@ -11,10 +12,12 @@ from .exception_handlers import get_exception_handlers
 app = FastAPI(
     title=settings.app.name,
     debug=settings.debug,
+    root_path=f"/v{settings.app.version}",
     version=str(settings.app.version),
     docs_url=settings.app.docs_url if settings.debug else None,
     redoc_url=settings.app.redoc_url if settings.debug else None,
     exception_handlers=get_exception_handlers(),
+    default_response_class=ORJSONResponse,
     responses={
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
             "model": BaseValidationErrorsSchema,
@@ -49,6 +52,13 @@ app = FastAPI(
             },
         },
     },
+    swagger_ui_parameters={
+        "docExpansion": None,
+        "tryItOutEnabled": settings.debug,
+        "displayRequestDuration": True,
+        "filter": True,
+        "requestSnippetsEnabled": True,
+    },
 )
 app.add_middleware(
     CORSMiddleware,
@@ -62,8 +72,3 @@ app.add_middleware(
 app.mount(
     f"/{settings.static.dir}", StaticFiles(directory=settings.static.dir)
 )
-
-# Include routers
-ROUTERS: list[APIRouter] = []
-for router in ROUTERS:
-    app.include_router(router, prefix=f"/api/v{settings.app.version}")

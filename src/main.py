@@ -7,6 +7,7 @@ from .core.config import settings
 from .core.schemas.errors import ServerErrorSchema
 from .core.schemas.validation import BaseValidationErrorsSchema
 from .exception_handlers import get_exception_handlers
+from .routers import user_router
 
 # App configuration
 app = FastAPI(
@@ -72,3 +73,7 @@ app.add_middleware(
 app.mount(
     f"/{settings.static.dir}", StaticFiles(directory=settings.static.dir)
 )
+
+# Include routers
+for router in (user_router,):
+    app.include_router(router)

@@ -30,17 +30,31 @@ async def pydantic_validation_exception_handler(
     _request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     errors = exc.errors()
-    formatted_errors = [
-        BaseValidationErrorSchema(
-            field=(
-                error["loc"][1]
-                if len(error["loc"]) > 1 and isinstance(error["loc"][1], str)
-                else error["loc"][0]
-            ),
-            detail=error["msg"],
-        ).model_dump()
-        for error in errors
-    ]
+    formatted_errors = []
+
+    for error in errors:
+        if error["type"] == "union_tag_not_found":
+            field = ".".join(str(part) for part in error["loc"])
+            detail = (
+                f"Field '{field}' is missing a required discriminator "
+                f"{error['ctx'].get('discriminator', 'unknown')}. "
+                "Please provide this field to determine the correct type."
+            )
+        elif error["type"] == "json_invalid":
+            field = ".".join(str(part) for part in error["loc"])
+            json_error = error["ctx"].get("error", "Invalid JSON")
+            detail = (
+                f"Invalid JSON at '{field}'. Error: {json_error}. "
+                "Please check your JSON structure and try again."
+            )
+        else:
+            field = error["loc"][-1] if len(error["loc"]) > 0 else "unknown"
+            detail = error["msg"]
+
+        formatted_errors.append(
+            BaseValidationErrorSchema(field=field, detail=detail).model_dump()
+        )
+
     return JSONResponse(
         status_code=422,
         content=BaseValidationErrorsSchema(

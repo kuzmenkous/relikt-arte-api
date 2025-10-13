@@ -1,20 +1,36 @@
-from fastapi import APIRouter, FastAPI, status
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .core.config import settings
-from .core.schemas.errors import ServerErrorSchema
-from .core.schemas.validation import BaseValidationErrorsSchema
-from .exception_handlers import get_exception_handlers
+from src.adapters.broker import broker
+from src.core.config import settings
+from src.core.schemas.errors import ServerErrorSchema
+from src.core.schemas.validation import BaseValidationErrorsSchema
+from src.exception_handlers import get_exception_handlers
+from src.routers import user_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:  # noqa: ARG001
+    await broker.start()
+    yield
+    await broker.stop()
+
 
 # App configuration
 app = FastAPI(
     title=settings.app.name,
     debug=settings.debug,
+    root_path=f"/v{settings.app.version}",
     version=str(settings.app.version),
     docs_url=settings.app.docs_url if settings.debug else None,
     redoc_url=settings.app.redoc_url if settings.debug else None,
     exception_handlers=get_exception_handlers(),
+    default_response_class=ORJSONResponse,
     responses={
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
             "model": BaseValidationErrorsSchema,
@@ -49,6 +65,13 @@ app = FastAPI(
             },
         },
     },
+    swagger_ui_parameters={
+        "docExpansion": None,
+        "tryItOutEnabled": settings.debug,
+        "displayRequestDuration": True,
+        "filter": True,
+        "requestSnippetsEnabled": True,
+    },
 )
 app.add_middleware(
     CORSMiddleware,
@@ -64,6 +87,5 @@ app.mount(
 )
 
 # Include routers
-ROUTERS: list[APIRouter] = []
-for router in ROUTERS:
-    app.include_router(router, prefix=f"/api/v{settings.app.version}")
+for router in (user_router,):
+    app.include_router(router)

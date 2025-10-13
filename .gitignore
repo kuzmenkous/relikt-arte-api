@@ -151,3 +151,9 @@ instance/
 # Ruff and Linters
 .ruff_cache/
 .import_linter_cache/
+
+# Poetry
+.poetry
+
+# Mailer
+mailer_data/

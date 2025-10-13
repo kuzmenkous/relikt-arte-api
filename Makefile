@@ -4,7 +4,7 @@
 PROFILE ?= dev
 ENV_FILE ?= .env
 COMPOSE ?= docker compose --env-file $(ENV_FILE)
-CONTAINER ?= api
+CONTAINER ?= $(if $(filter prod,$(PROFILE)),api,api-dev) # Dynamically set container based on profile
 SHELL_CMD ?= bash
 OPTIONS ?= -u root
 
@@ -111,11 +111,35 @@ ps-dev:
 ps-prod:
 	$(MAKE) ps PROFILE=prod
 
+migration-dev:
+	$(MAKE) migration PROFILE=dev message="$(message)"
+
+migration-prod:
+	$(MAKE) migration PROFILE=prod message="$(message)"
+
 migration-dev-upgrade:
 	$(MAKE) migration-upgrade PROFILE=dev
 
 migration-prod-upgrade:
 	$(MAKE) migration-upgrade PROFILE=prod
+
+migration-dev-downgrade:
+	$(MAKE) migration-downgrade PROFILE=dev
+
+migration-prod-downgrade:
+	$(MAKE) migration-downgrade PROFILE=prod
+
+migration-dev-current:
+	$(MAKE) migration-current PROFILE=dev
+
+migration-prod-current:
+	$(MAKE) migration-current PROFILE=prod
+
+migration-dev-history:
+	$(MAKE) migration-history PROFILE=dev
+
+migration-prod-history:
+	$(MAKE) migration-history PROFILE=prod
 
 pip-list-dev:
 	$(MAKE) pip-list PROFILE=dev

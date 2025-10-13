@@ -10,4 +10,10 @@ class UserRole(StrEnum):
     SUPERADMIN = auto()
 
 
+class ConfirmationCodeType(StrEnum):
+    REGISTRATION = auto()
+    EMAIL_CHANGE = auto()
+    PASSWORD_RESET = auto()
+
+
 password_hasher = PasswordHasher()

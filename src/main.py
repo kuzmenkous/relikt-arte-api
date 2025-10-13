@@ -1,13 +1,25 @@
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .core.config import settings
-from .core.schemas.errors import ServerErrorSchema
-from .core.schemas.validation import BaseValidationErrorsSchema
-from .exception_handlers import get_exception_handlers
-from .routers import user_router
+from src.adapters.broker import broker
+from src.core.config import settings
+from src.core.schemas.errors import ServerErrorSchema
+from src.core.schemas.validation import BaseValidationErrorsSchema
+from src.exception_handlers import get_exception_handlers
+from src.routers import user_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:  # noqa: ARG001
+    await broker.start()
+    yield
+    await broker.stop()
+
 
 # App configuration
 app = FastAPI(

@@ -22,7 +22,7 @@ class IdSchema(BaseModel, from_attributes=True):
 @dataclass
 class Pagination:
     offset: NonNegativeInt = 0
-    limit: Annotated[PositiveInt, Interval(10, 500)] = 50
+    limit: Annotated[int, Interval(ge=10, le=500)] = 50
 
 
 class Page[I: Iterable[Any]](BaseModel):

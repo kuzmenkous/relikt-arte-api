@@ -48,6 +48,12 @@ RUN chmod +x /app/run.sh
 
 ENV PYTHONPATH="/app/api/src:${PYTHONPATH}"
 
+FROM src AS mailer
+
+ENTRYPOINT [ "faststream", "run", "src.mailer.app:app" ]
+
+HEALTHCHECK --start-period=5s --start-interval=1s --interval=1h CMD [ "curl", "-f", "http://localhost:8000/liveness" ]
+
 # Stage 4: Final image for the API
 FROM src AS api
 

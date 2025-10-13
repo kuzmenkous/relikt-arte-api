@@ -15,7 +15,7 @@ from pydantic_extra_types.phone_numbers import (
     PhoneNumberValidator,
 )
 
-from src.constants.user import UserRole, password_hasher
+from src.constants.user import ConfirmationCodeType, UserRole, password_hasher
 from src.schemas.base import CreatedAtMixin, IdSchema, IsActiveMixin
 
 
@@ -132,3 +132,12 @@ User = RootModel[
         Field(discriminator="role"),
     ]
 ]
+
+
+class ConfirmationCodeWrite(EmailUpdate, BaseModel):
+    code: str
+    type: ConfirmationCodeType
+
+
+class ConfirmationCodeRead(IdSchema, ConfirmationCodeWrite, CreatedAtMixin):
+    pass

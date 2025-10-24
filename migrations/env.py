@@ -6,8 +6,9 @@ from alembic import context
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import src.models  # noqa: F401
 from src.core.config import settings
-from src.core.db.base import BaseModel
+from src.models.base import BaseModel
 
 alembic_postgresql_enum.set_configuration(
     alembic_postgresql_enum.Config(add_type_ignore=True)

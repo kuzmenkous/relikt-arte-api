@@ -2,10 +2,10 @@ from functools import lru_cache
 
 from dotenv import load_dotenv
 from pydantic import Field
-from pydantic.networks import PostgresDsn
+from pydantic.networks import AmqpDsn, PostgresDsn
 from pydantic_settings import BaseSettings
 
-from .pydantic_types import TimezoneInfo
+from src.core.pydantic_types import TimezoneInfo
 
 
 class AppSettings(BaseSettings, env_prefix="app_"):
@@ -20,11 +20,6 @@ class AppSettings(BaseSettings, env_prefix="app_"):
     @property
     def base_url(self) -> str:
         return f"{self.protocol}://{self.domain}"
-
-
-class SuperAdminSettings(BaseSettings, env_prefix="superadmin_"):
-    email: str
-    password: str
 
 
 class CorsSettings(BaseSettings, env_prefix="cors_"):
@@ -64,8 +59,24 @@ class StaticSettings(BaseSettings, env_prefix="static_"):
     allowed_types: list[str]
 
 
-class PaginationSettings(BaseSettings, env_prefix="pagination_"):
-    limit_per_page: int = 20
+class RedisSettings(BaseSettings, env_prefix="redis_"):
+    password: str
+
+
+class RabbitSettings(BaseSettings, env_prefix="rabbitmq_"):
+    user: str
+    password: str
+
+    @property
+    def url(self) -> str:
+        return str(
+            AmqpDsn.build(
+                scheme="amqp",
+                username=self.user,
+                password=self.password,
+                host="message_queue",
+            )
+        )
 
 
 class Settings(BaseSettings):
@@ -74,8 +85,6 @@ class Settings(BaseSettings):
 
     # App
     app: AppSettings = Field(default_factory=AppSettings)
-    # Superadmin
-    superadmin: SuperAdminSettings = Field(default_factory=SuperAdminSettings)
     # Cors
     cors: CorsSettings = Field(default_factory=CorsSettings)
     # Database
@@ -84,8 +93,10 @@ class Settings(BaseSettings):
     jwt: JWTSettings = Field(default_factory=JWTSettings)
     # Static
     static: StaticSettings = Field(default_factory=StaticSettings)
-    # Pagination
-    pagination: PaginationSettings = Field(default_factory=PaginationSettings)
+    # Redis
+    redis: RedisSettings = Field(default_factory=RedisSettings)
+    # RabbitMQ
+    rabbit: RabbitSettings = Field(default_factory=RabbitSettings)
 
 
 @lru_cache
@@ -94,4 +105,4 @@ def get_settings() -> Settings:
     return Settings()
 
 
-settings = Settings()
+settings: Settings = get_settings()

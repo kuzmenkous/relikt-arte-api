@@ -14,6 +14,13 @@ x-depends_on_db: &depends_on_db
   db:
     condition: service_healthy
 
+x-depends_on_db_and_message_queue_and_redis: &depends_on_db_and_message_queue_and_redis
+  <<: *depends_on_db
+  message_queue:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+
 x-src: &launch
   <<: *restart_and_tty
   init: true
@@ -27,6 +34,14 @@ x-db_envs: &db_envs
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
   POSTGRES_DB: ${POSTGRES_DB}
   TZ: ${TIMEZONE}
+
+x-rabbitmq_envs: &rabbitmq_envs
+  RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+  RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+
+
+x-db-and-rabbitmq-envs: &db_and_rabbitmq_envs
+  <<: [*db_envs, *rabbitmq_envs]
 
 
 services:
@@ -51,9 +66,9 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
     depends_on:
-      <<: *depends_on_db
+      <<: *depends_on_db_and_message_queue_and_redis
     volumes:
-      - "./static:/app/static"
+      - ./static:/app/static
 
   api-dev:
     <<: *api
@@ -68,10 +83,53 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
     depends_on:
-      <<: *depends_on_db
+      <<: *depends_on_db_and_message_queue_and_redis
     volumes:
-      - ".:/app/api"
-      - "./static:/app/static"
+      - .:/app/api
+      - ./static:/app/static
+
+  mailer:
+    profiles: [ "prod" ]
+    <<: *launch
+    build:
+      context: .
+      target: mailer
+    environment:
+      DEBUG: 0
+      <<: *db_and_rabbitmq_envs
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_USE_TLS: ${SMTP_USE_TLS}
+      SMTP_START_TLS: ${SMTP_START_TLS}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+    depends_on:
+      <<: *depends_on_db_and_message_queue_and_redis
+    volumes:
+      - ./mailer_data:/app/mailer_data
+
+  mailer-dev:
+    profiles: [ "dev" ]
+    <<: *launch
+    build:
+      context: .
+      target: mailer
+    environment:
+      DEBUG: 1
+      <<: *db_and_rabbitmq_envs
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_USE_TLS: ${SMTP_USE_TLS}
+      SMTP_START_TLS: ${SMTP_START_TLS}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+    depends_on:
+      <<: *depends_on_db_and_message_queue_and_redis
+    volumes:
+      - .:/app/api
+      - ./mailer_data:/app/mailer_data
 
   db_client:
     profiles: [ "dev" ]
@@ -83,6 +141,28 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports: [ "127.0.0.1:5050:80" ]
+
+  redis:
+    profiles: [ "prod", "dev" ]
+    <<: *restart_and_tty
+    image: redis:8
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      start_period: 5s
+      start_interval: 1s
+
+  message_queue:
+    profiles: [ "prod", "dev" ]
+    <<: *restart_and_tty
+    image: rabbitmq:4
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      start_period: 5s
+      start_interval: 1s
+    environment:
+      <<: *rabbitmq_envs
+
 
 volumes:
   db_data:
